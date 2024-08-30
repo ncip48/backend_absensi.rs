@@ -8,6 +8,7 @@ mod schema;
 mod validate;
 use crate::handlers::classroom::get_classrooms;
 use crate::middleware::auth::Auth as AuthMiddleware;
+use actix_cors::Cors;
 use actix_web::{web, App, HttpServer};
 use handlers::{
     auth::login,
@@ -20,6 +21,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new().service(
             web::scope("api")
+                .wrap(Cors::new().supports_credentials().finish())
                 .wrap(AuthMiddleware)
                 .service(web::scope("/login").route("", web::post().to(login)))
                 .service(web::scope("/profile").route("", web::get().to(get_profile)))
