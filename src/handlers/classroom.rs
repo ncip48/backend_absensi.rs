@@ -1,5 +1,6 @@
 use crate::database::establish_connection;
 use crate::models::classroom::{Classroom, NewClassroom, UpdateClassroom};
+use crate::validate::validate;
 use actix_web::{web, HttpResponse, Result};
 use diesel::prelude::*;
 
@@ -12,12 +13,19 @@ pub async fn get_classrooms() -> Result<HttpResponse> {
     Ok(HttpResponse::Ok().json(datas))
 }
 
-pub async fn create_classroom(new_classroom: web::Json<NewClassroom>) -> Result<HttpResponse> {
+pub async fn create_classroom(params: web::Json<NewClassroom>) -> Result<HttpResponse> {
+    validate(&params)?;
     use crate::schema::classrooms::dsl::*;
     let mut connection = establish_connection();
 
+    let new_classroom: NewClassroom = NewClassroom {
+        classroom_name: params.classroom_name.to_string(),
+        classroom_status: params.classroom_status,
+    }
+    .into();
+
     diesel::insert_into(classrooms)
-        .values(&new_classroom.into_inner())
+        .values(&new_classroom)
         .execute(&mut connection)
         .expect("Error inserting new classroom");
     Ok(HttpResponse::Ok().json("data inserted into the database"))

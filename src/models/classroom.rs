@@ -1,6 +1,7 @@
 use crate::schema::classrooms;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use validator::Validate;
 
 #[derive(Queryable, Serialize)]
 pub struct Classroom {
@@ -9,9 +10,13 @@ pub struct Classroom {
     pub classroom_status: Option<bool>,
 }
 
-#[derive(Queryable, Insertable, Serialize, Deserialize)]
+#[derive(Queryable, Insertable, Serialize, Deserialize, Validate)]
 #[table_name = "classrooms"]
 pub struct NewClassroom {
+    #[validate(length(
+        min = 3,
+        message = "classroom_name is required and must be at least 3 characters"
+    ))]
     pub classroom_name: String,
     pub classroom_status: bool,
 }

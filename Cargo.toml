@@ -7,4 +7,13 @@ edition = "2021"
 serde = { version = "1.0.209", features = ["derive"] }
 diesel = { version = "2.1.0", features = ["mysql"] }
 dotenv = "0.15.0"
-actix-web = "4"
+validator = { version = "0.18.1", features = ["derive"] }
+derive_more = { version = "0.15" }
+jsonwebtoken = "9.3.0"
+chrono = { version = "= 0.4.29" }
+argon2rs = "0.2.5"
+actix-web = "2"
+actix-identity = "0.2.1"
+actix-service = "1.0.5"
+actix-rt = "1"
+futures = "0.3.1"

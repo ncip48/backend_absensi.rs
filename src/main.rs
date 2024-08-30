@@ -1,20 +1,34 @@
+mod auth;
 mod database;
+mod errors;
 mod handlers;
+mod middleware;
 mod models;
 mod schema;
+mod validate;
 use crate::handlers::classroom::get_classrooms;
+use crate::middleware::auth::Auth as AuthMiddleware;
 use actix_web::{web, App, HttpServer};
-use handlers::classroom::{create_classroom, delete_classroom, update_classroom};
+use handlers::{
+    auth::login,
+    classroom::{create_classroom, delete_classroom, update_classroom},
+};
 
-#[actix_web::main]
+#[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
-        App::new()
-            .route("/classroom", web::post().to(create_classroom))
-            .route("/classrooms", web::get().to(get_classrooms))
-            // changed this route path
-            .route("/classroom/{id}", web::put().to(update_classroom))
-            .route("/classroom/{id}", web::delete().to(delete_classroom))
+        App::new().service(
+            web::scope("api")
+                .wrap(AuthMiddleware)
+                .service(web::scope("/login").route("", web::post().to(login)))
+                .service(
+                    web::scope("/classroom")
+                        .route("/{id}", web::put().to(update_classroom))
+                        .route("/{id}", web::delete().to(delete_classroom))
+                        .route("", web::get().to(get_classrooms))
+                        .route("", web::post().to(create_classroom)),
+                ),
+        )
     })
     .bind("127.0.0.1:8080")?
     .run()
