@@ -3,6 +3,13 @@ use crate::models::classroom::{Classroom, NewClassroom, UpdateClassroom};
 use crate::validate::validate;
 use actix_web::{web, HttpResponse, Result};
 use diesel::prelude::*;
+use serde::Serialize;
+#[derive(Serialize)]
+pub struct ClassroomResponse {
+    success: bool,
+    msg: &'static str,
+    data: Vec<Classroom>,
+}
 
 pub async fn get_classrooms() -> Result<HttpResponse> {
     use crate::schema::classrooms::dsl::*;
@@ -10,7 +17,14 @@ pub async fn get_classrooms() -> Result<HttpResponse> {
     let datas = classrooms
         .load::<Classroom>(&mut connection)
         .expect("Error loading classrooms");
-    Ok(HttpResponse::Ok().json(datas))
+
+    let response = ClassroomResponse {
+        success: true,                    // You can adjust this based on your actual logic
+        msg: "Data fetched successfully", // A message to include in the response
+        data: datas,
+    };
+
+    Ok(HttpResponse::Ok().json(response))
 }
 
 pub async fn create_classroom(params: web::Json<NewClassroom>) -> Result<HttpResponse> {
