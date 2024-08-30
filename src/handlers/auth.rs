@@ -1,5 +1,6 @@
 use crate::auth::{create_jwt, hash, PrivateClaim};
 use crate::database::establish_connection;
+use crate::errors::ApiError;
 use crate::models::user::User;
 use crate::validate::validate;
 use actix_identity::Identity;
@@ -20,9 +21,14 @@ pub struct LoginRequest {
     ))]
     pub password: String,
 }
-
 #[derive(Serialize, Deserialize)]
 pub struct AuthResponse {
+    success: bool,
+    msg: &'static str,
+    data: Auth,
+}
+#[derive(Serialize, Deserialize)]
+pub struct Auth {
     user_id: i32,
     username: String,
     email: String,
@@ -42,7 +48,7 @@ pub async fn login(id: Identity, params: web::Json<LoginRequest>) -> Result<Http
         .filter(username.eq(&params.username.to_string()))
         .filter(password.eq(&hashed.to_string()))
         .first::<User>(&mut connection)
-        .map_err(|_| HttpResponse::Unauthorized().finish())?;
+        .map_err(|_| ApiError::NotFound("User not found".to_string()))?;
 
     // Create a JWT token for the user
     let private_claim = PrivateClaim::new(user.user_id, user.username.clone());
@@ -53,10 +59,14 @@ pub async fn login(id: Identity, params: web::Json<LoginRequest>) -> Result<Http
 
     // Prepare the response with the JWT
     let response = AuthResponse {
-        user_id: user.user_id,
-        email: user.email,
-        username: user.username,
-        token: Some(jwt),
+        success: true,
+        msg: "Login success",
+        data: Auth {
+            user_id: user.user_id,
+            email: user.email,
+            username: user.username,
+            token: Some(jwt),
+        },
     };
 
     // Return the user information as JSON

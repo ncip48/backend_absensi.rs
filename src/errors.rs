@@ -23,7 +23,9 @@ pub enum ApiError {
 /// User-friendly error messages
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ErrorResponse {
-    errors: Vec<String>,
+    success: bool,
+    msg: Vec<String>,
+    data: Option<String>,
 }
 
 /// Automatically convert ApiErrors to external Response Errors
@@ -57,7 +59,9 @@ impl ResponseError for ApiError {
 impl From<&String> for ErrorResponse {
     fn from(error: &String) -> Self {
         ErrorResponse {
-            errors: vec![error.into()],
+            success: false,
+            msg: vec![error.into()],
+            data: None,
         }
     }
 }
@@ -65,7 +69,11 @@ impl From<&String> for ErrorResponse {
 /// Utility to make transforming a vector of strings into an ErrorResponse
 impl From<Vec<String>> for ErrorResponse {
     fn from(errors: Vec<String>) -> Self {
-        ErrorResponse { errors }
+        ErrorResponse {
+            success: false,
+            msg: errors,
+            data: None,
+        }
     }
 }
 
