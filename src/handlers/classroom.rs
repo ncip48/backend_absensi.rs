@@ -79,25 +79,53 @@ pub async fn update_classroom(
     let clid = id.into_inner();
     // Use the `update` method of the Diesel ORM
     //to update the student's record
-    let updated_classroom = diesel::update(classrooms.find(clid))
+    match diesel::update(classrooms.find(clid))
         .set(&classroom_update.into_inner())
         .execute(&mut connection)
-        .expect("Failed to update student");
+    {
+        Ok(_) => {
+            let response = ClassroomResponse {
+                success: true,
+                msg: "Classroom updated successfully",
+                data: vec![],
+            };
 
-    let response = ClassroomResponse {
-        success: true,
-        msg: "Classroom updated successfully",
-        data: vec![],
-    };
-    Ok(HttpResponse::Ok().json(response))
+            return Ok(HttpResponse::Ok().json(response));
+        }
+        Err(e) => {
+            let response = ClassroomResponse {
+                success: false,
+                msg: "Error updating classroom",
+                data: vec![],
+            };
+
+            return Ok(HttpResponse::InternalServerError().json(response));
+        }
+    }
 }
 
 pub async fn delete_classroom(id: web::Path<i32>) -> Result<HttpResponse> {
     use crate::schema::classrooms::dsl::*;
     let mut connection = establish_connection();
     let clid = id.into_inner();
-    diesel::delete(classrooms.find(clid))
-        .execute(&mut connection)
-        .expect(&format!("Unable to find classroom {:?}", clid));
-    Ok(HttpResponse::Ok().json("Deleted successfully"))
+    match diesel::delete(classrooms.find(clid)).execute(&mut connection) {
+        Ok(_) => {
+            let response = ClassroomResponse {
+                success: true,
+                msg: "Classroom deleted successfully",
+                data: vec![],
+            };
+
+            return Ok(HttpResponse::Ok().json(response));
+        }
+        Err(e) => {
+            let response = ClassroomResponse {
+                success: false,
+                msg: "Error deleting classroom",
+                data: vec![],
+            };
+
+            return Ok(HttpResponse::InternalServerError().json(response));
+        }
+    }
 }
