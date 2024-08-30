@@ -14,9 +14,16 @@ pub struct ClassroomResponse {
 pub async fn get_classrooms() -> Result<HttpResponse> {
     use crate::schema::classrooms::dsl::*;
     let mut connection = establish_connection();
-    let datas = classrooms
-        .load::<Classroom>(&mut connection)
-        .expect("Error loading classrooms");
+    let datas = match classrooms.load::<Classroom>(&mut connection) {
+        Ok(data) => data,
+        Err(_) => {
+            return Ok(HttpResponse::InternalServerError().json(ClassroomResponse {
+                success: false,
+                msg: "Error loading classrooms",
+                data: vec![],
+            }));
+        }
+    };
 
     let response = ClassroomResponse {
         success: true,                    // You can adjust this based on your actual logic
@@ -38,11 +45,29 @@ pub async fn create_classroom(params: web::Json<NewClassroom>) -> Result<HttpRes
     }
     .into();
 
-    diesel::insert_into(classrooms)
+    match diesel::insert_into(classrooms)
         .values(&new_classroom)
         .execute(&mut connection)
-        .expect("Error inserting new classroom");
-    Ok(HttpResponse::Ok().json("data inserted into the database"))
+    {
+        Ok(_) => {
+            let response = ClassroomResponse {
+                success: true,
+                msg: "Classroom created successfully",
+                data: vec![],
+            };
+
+            return Ok(HttpResponse::Ok().json(response));
+        }
+        Err(e) => {
+            let response = ClassroomResponse {
+                success: false,
+                msg: "Error creating classroom",
+                data: vec![],
+            };
+
+            return Ok(HttpResponse::InternalServerError().json(response));
+        }
+    }
 }
 
 pub async fn update_classroom(
@@ -58,7 +83,13 @@ pub async fn update_classroom(
         .set(&classroom_update.into_inner())
         .execute(&mut connection)
         .expect("Failed to update student");
-    Ok(HttpResponse::Ok().json(updated_classroom))
+
+    let response = ClassroomResponse {
+        success: true,
+        msg: "Classroom updated successfully",
+        data: vec![],
+    };
+    Ok(HttpResponse::Ok().json(response))
 }
 
 pub async fn delete_classroom(id: web::Path<i32>) -> Result<HttpResponse> {
