@@ -432,6 +432,7 @@ dependencies = [
  "futures",
  "jsonwebtoken",
  "serde",
+ "serde_json",
  "validator",
 ]
 

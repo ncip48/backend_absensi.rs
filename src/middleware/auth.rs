@@ -1,6 +1,5 @@
 use crate::auth::{decode_jwt, PrivateClaim};
 use crate::errors::ApiError;
-use actix_identity::RequestIdentity;
 use actix_service::{Service, Transform};
 use actix_web::{
     dev::{ServiceRequest, ServiceResponse},
@@ -10,6 +9,7 @@ use futures::{
     future::{ok, Ready},
     Future,
 };
+use serde::Serialize;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
@@ -33,6 +33,12 @@ where
 }
 pub struct AuthMiddleware<S> {
     service: S,
+}
+
+#[derive(Serialize)]
+pub struct UnathorizedResponse {
+    success: bool,
+    msg: &'static str,
 }
 
 fn get_bearer_token(req: &ServiceRequest) -> Option<String> {
@@ -66,9 +72,20 @@ where
         let unauthorized = !is_logged_in && req.path() != "/api/login";
 
         if unauthorized {
-            return Box::pin(async move {
-                Ok(req.into_response(HttpResponse::Unauthorized().finish().into_body()))
-            });
+            let response_body = UnathorizedResponse {
+                success: false,
+                msg: "Unauthorized",
+            };
+
+            let json_body =
+                serde_json::to_string(&response_body).unwrap_or_else(|_| "{}".to_string());
+
+            // Create a response with JSON body
+            let response = HttpResponse::Unauthorized()
+                .content_type("application/json")
+                .body(json_body);
+
+            return Box::pin(async move { Ok(req.error_response(response)) });
         }
 
         let fut = self.service.call(req);
