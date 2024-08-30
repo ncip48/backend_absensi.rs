@@ -46,9 +46,7 @@ impl ResponseError for ApiError {
                 HttpResponse::UnprocessableEntity().json(error_response)
             }
             ApiError::Unauthorized(error) => {
-                // Explicitly convert `error` to `ErrorResponse`
-                let error_response: ErrorResponse = error.into();
-                HttpResponse::Unauthorized().json(error_response)
+                HttpResponse::Unauthorized().json::<ErrorResponse>(error.into())
             }
             _ => HttpResponse::new(StatusCode::INTERNAL_SERVER_ERROR),
         }
